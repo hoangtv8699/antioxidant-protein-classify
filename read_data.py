@@ -11,6 +11,8 @@ import re
 from models import models
 from sklearn.model_selection import StratifiedKFold
 from matplotlib import pyplot as plt
+import tensorflow as tf
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 
 def read_data(path):
@@ -85,6 +87,7 @@ def plot_specificity(history, i):
 def train(n_splits, path, batch_size, epochs):
     # read data
     data, labels = read_data(path)
+    data = normalize(data)
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1)
@@ -92,16 +95,10 @@ def train(n_splits, path, batch_size, epochs):
     i = 0
     for train_index, val_index in skf.split(data, labels):
         # split data
-        train_data = np.expand_dims(data[train_index], axis=-1)
+        train_data = np.expand_dims(data[train_index], axis=-1).astype(np.float32)
         train_labels = labels[train_index]
-        val_data = np.expand_dims(data[val_index], axis=-1)
+        val_data = np.expand_dims(data[val_index], axis=-1).astype(np.float32)
         val_labels = labels[val_index]
-
-        # normalize data
-        train_data = np.asarray(normalize(train_data)).astype('float32')
-        train_labels = np.asarray(train_labels).astype('float32')
-        val_data = np.asarray(normalize(val_data)).astype('float32')
-        val_labels = np.asarray(val_labels).astype('float32')
 
         print("number of train data: {}".format(len(train_data)))
         print("number of val data: {}".format(len(val_data)))
@@ -113,6 +110,14 @@ def train(n_splits, path, batch_size, epochs):
         # create weight
         weight = {0: 6, 1: 1}
 
+        # callback
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
+                                      patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
+                                      min_lr=0.0001)
+        callbacks = [
+            reduce_lr
+        ]
+
         # train model
         history = model.fit(
             train_data,
@@ -120,7 +125,8 @@ def train(n_splits, path, batch_size, epochs):
             batch_size=batch_size,
             epochs=epochs,
             validation_data=(val_data, val_labels),
-            class_weight=weight
+            class_weight=weight,
+            callbacks=callbacks
         )
         model.save('saved_models/' + get_model_name(i))
         plot_accuracy(history, i)
@@ -134,6 +140,6 @@ if __name__ == '__main__':
     path = 'data/train/'
     n_splits = 5
     random_state = 1
-    BATCH_SIZE = 1
-    EPOCHS = 1
+    BATCH_SIZE = 64
+    EPOCHS = 300
     train(n_splits, path, BATCH_SIZE, EPOCHS)

@@ -1,27 +1,62 @@
-import tensorflow
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import backend as K
+import numpy as np
 
 
 def sensitivity(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    return true_positives / (possible_positives + K.epsilon())
+    """Compute the confusion matrix for a set of predictions.
+
+        Parameters
+        ----------
+        y_pred   : predicted values for a batch if samples (must be binary: 0 or 1)
+        y_true   : correct values for the set of samples used (must be binary: 0 or 1)
+
+        Returns
+        -------
+        out : the sensitivity
+        """
+
+    y_pred_bin = tf.math.argmax(y_pred, axis=1)
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
+
+    # as Keras Tensors
+    TP = tf.cast(confusion_matrix[0][1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1][1], dtype=tf.float32)
+
+    specificity = TP / (TP + FN + K.epsilon())
+    return specificity
 
 
 def specificity(y_true, y_pred):
-    true_negatives = K.sum(K.round(K.clip((1 - y_true) * (1 - y_pred), 0, 1)))
-    possible_negatives = K.sum(K.round(K.clip(1 - y_true, 0, 1)))
-    return true_negatives / (possible_negatives + K.epsilon())
+    """Compute the confusion matrix for a set of predictions.
+
+    Parameters
+    ----------
+    y_pred   : predicted values for a batch if samples (must be binary: 0 or 1)
+    y_true   : correct values for the set of samples used (must be binary: 0 or 1)
+
+    Returns
+    -------
+    out : the specificity
+    """
+
+    y_pred_bin = tf.math.argmax(y_pred, axis=1)
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
+
+    # as Keras Tensors
+    TN = tf.cast(confusion_matrix[0][0], dtype=tf.float32)
+    FP = tf.cast(confusion_matrix[1][0], dtype=tf.float32)
+
+    specificity = TN / (TN + FP + K.epsilon())
+    return specificity
 
 
 def models():
@@ -32,7 +67,7 @@ def models():
         Conv2D(64, (3, 3), activation='relu'),
         MaxPooling2D(2, 2),
 
-        Reshape((1152, 1)),
+        Reshape((-1, 1)),
 
         LSTM(512),
 
