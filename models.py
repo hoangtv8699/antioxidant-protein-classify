@@ -1,3 +1,5 @@
+from distutils.command.config import config
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
@@ -28,11 +30,10 @@ def sensitivity(y_true, y_pred):
     confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
 
     # as Keras Tensors
-    TP = tf.cast(confusion_matrix[0][1], dtype=tf.float32)
-    FN = tf.cast(confusion_matrix[1][1], dtype=tf.float32)
-
-    specificity = TP / (TP + FN + K.epsilon())
-    return specificity
+    TP = tf.cast(confusion_matrix[1][1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1][0], dtype=tf.float32)
+    sensitivity = TP / (TP + FN + K.epsilon())
+    return sensitivity
 
 
 def specificity(y_true, y_pred):
@@ -53,8 +54,7 @@ def specificity(y_true, y_pred):
 
     # as Keras Tensors
     TN = tf.cast(confusion_matrix[0][0], dtype=tf.float32)
-    FP = tf.cast(confusion_matrix[1][0], dtype=tf.float32)
-
+    FP = tf.cast(confusion_matrix[0][1], dtype=tf.float32)
     specificity = TN / (TN + FP + K.epsilon())
     return specificity
 
@@ -63,21 +63,27 @@ def models():
     model = Sequential([
         Conv2D(32, (3, 3), activation='relu', input_shape=(None, None, 1)),
         MaxPooling2D(2, 2),
+        Dropout(0.2),
 
         Conv2D(64, (3, 3), activation='relu'),
         MaxPooling2D(2, 2),
+        Dropout(0.2),
 
         Reshape((-1, 1)),
 
         LSTM(512),
+        Dropout(0.2),
 
         Dense(512, activation='relu'),
+        Dropout(0.2),
         Dense(2, activation='softmax')
     ])
 
+    optimizer = keras.optimizers.Adam(lr=0.0001)
+
     model.compile(
-        optimizer='adam',
+        optimizer=optimizer,
         loss='sparse_categorical_crossentropy',
-        metrics=['accuracy', sensitivity, specificity]
+        metrics=[sensitivity, specificity, 'accuracy',]
     )
     return model

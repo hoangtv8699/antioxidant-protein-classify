@@ -84,13 +84,13 @@ def plot_specificity(history, i):
     plt.clf()
 
 
-def train(n_splits, path, batch_size, epochs):
+def train(n_splits, path, batch_size, epochs, random_state):
     # read data
     data, labels = read_data(path)
     data = normalize(data)
 
     # create 10-fold cross validation
-    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=1)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
 
     i = 0
     for train_index, val_index in skf.split(data, labels):
@@ -108,7 +108,7 @@ def train(n_splits, path, batch_size, epochs):
         print(model.summary())
 
         # create weight
-        weight = {0: 6, 1: 1}
+        weight = {0: 1, 1: 6}
 
         # callback
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
@@ -142,4 +142,4 @@ if __name__ == '__main__':
     random_state = 1
     BATCH_SIZE = 64
     EPOCHS = 300
-    train(n_splits, path, BATCH_SIZE, EPOCHS)
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
