@@ -7,6 +7,7 @@ import pandas as pd
 from Bio import SeqIO
 from matplotlib import pyplot as plt
 import re
+import numpy as np
 
 
 def main():
