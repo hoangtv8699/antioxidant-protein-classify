@@ -43,7 +43,6 @@ def read_data(path, padding="pad_sequence"):
             df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
         elif padding == "same":
             df = pad_same(df, maxlen=MAX_LEN)
-        print(df.shape)
         label = int(pssm_file.split('_')[1])
         data.append(df)
         labels.append(label)
@@ -124,6 +123,8 @@ def train(n_splits, path, batch_size, epochs, random_state):
         print("number of train data: {}".format(len(train_data)))
         print("number of val data: {}".format(len(val_data)))
 
+        print(train_data.shape)
+
         # # create model
         # model = models()
         # print(model.summary())
@@ -159,9 +160,8 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
 if __name__ == '__main__':
     path = 'data/csv/'
-    # n_splits = 5
-    # random_state = 1
-    # BATCH_SIZE = 64
-    # EPOCHS = 300
-    # train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
-    read_data(path, padding="same")
+    n_splits = 5
+    random_state = 1
+    BATCH_SIZE = 64
+    EPOCHS = 300
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
