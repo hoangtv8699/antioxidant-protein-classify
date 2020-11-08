@@ -26,12 +26,12 @@ def sensitivity(y_true, y_pred):
         out : the sensitivity
         """
 
-    y_pred_bin = tf.math.argmax(y_pred, axis=1)
+    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
     confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
 
     # as Keras Tensors
-    TP = tf.cast(confusion_matrix[1][1], dtype=tf.float32)
-    FN = tf.cast(confusion_matrix[1][0], dtype=tf.float32)
+    TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32)
     sensitivity = TP / (TP + FN + K.epsilon())
     return sensitivity
 
@@ -49,12 +49,12 @@ def specificity(y_true, y_pred):
     out : the specificity
     """
 
-    y_pred_bin = tf.math.argmax(y_pred, axis=1)
+    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
     confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
 
     # as Keras Tensors
-    TN = tf.cast(confusion_matrix[0][0], dtype=tf.float32)
-    FP = tf.cast(confusion_matrix[0][1], dtype=tf.float32)
+    TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32)
+    FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32)
     specificity = TN / (TN + FP + K.epsilon())
     return specificity
 
@@ -71,15 +71,15 @@ def models():
 
         Reshape((-1, 1)),
 
-        LSTM(512),
+        LSTM(256),
         Dropout(0.2),
 
-        Dense(512, activation='relu'),
+        Dense(256, activation='relu'),
         Dropout(0.2),
         Dense(2, activation='softmax')
     ])
 
-    optimizer = keras.optimizers.Adam(lr=0.0001)
+    optimizer = keras.optimizers.Adam(lr=0.001)
 
     model.compile(
         optimizer=optimizer,

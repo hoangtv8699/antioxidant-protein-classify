@@ -23,7 +23,6 @@ def pad_same(sequence, maxlen=400):
     cur_len = len(sequence)
     if cur_len > maxlen:
         return sequence[:maxlen, :]
-
     step = int(maxlen / cur_len - 1)
     for i in range(step):
         sequence = np.append(sequence, copy_sequence, axis=0)
@@ -31,7 +30,7 @@ def pad_same(sequence, maxlen=400):
     return np.append(sequence, copy_sequence[:append_len, :], axis=0)
 
 
-def read_data(path, padding="pad_sequence"):
+def read_data(path, padding="same"):
     pssm_files = os.listdir(path)
     data = []
     labels = []
@@ -43,7 +42,6 @@ def read_data(path, padding="pad_sequence"):
             df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
         elif padding == "same":
             df = pad_same(df, maxlen=MAX_LEN)
-        print(df.shape)
         label = int(pssm_file.split('_')[1])
         data.append(df)
         labels.append(label)
@@ -107,7 +105,7 @@ def plot_specificity(history, i):
 
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
-    data, labels = read_data(path)
+    data, labels = read_data(path, padding="same")
     data = normalize(data)
 
     # create 10-fold cross validation
@@ -124,44 +122,50 @@ def train(n_splits, path, batch_size, epochs, random_state):
         print("number of train data: {}".format(len(train_data)))
         print("number of val data: {}".format(len(val_data)))
 
-        # # create model
-        # model = models()
-        # print(model.summary())
-        #
-        # # create weight
-        # weight = {0: 1, 1: 6}
-        #
-        # # callback
-        # reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
-        #                               patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
-        #                               min_lr=0.0001)
-        # callbacks = [
-        #     reduce_lr
-        # ]
-        #
-        # # train model
-        # history = model.fit(
-        #     train_data,
-        #     train_labels,
-        #     batch_size=batch_size,
-        #     epochs=epochs,
-        #     validation_data=(val_data, val_labels),
-        #     class_weight=weight,
-        #     callbacks=callbacks
-        # )
-        # model.save('saved_models/' + get_model_name(i))
-        # plot_accuracy(history, i)
-        # plot_loss(history, i)
-        # plot_sensitivity(history, i)
-        # plot_specificity(history, i)
+        # create model
+        model = models()
+        print(model.summary())
+
+        # create weight
+        weight = {0: 1, 1: 6}
+
+        # callback
+        checkpoint = "saved_models"
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint,
+            save_weights_only=True,
+            save_freq=100)
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
+                                      patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
+                                      min_lr=0.0001)
+        callbacks = [
+            reduce_lr,
+            model_checkpoint_callback
+        ]
+
+        # train model
+        history = model.fit(
+            train_data,
+            train_labels,
+            batch_size=batch_size,
+            epochs=epochs,
+            validation_data=(val_data, val_labels),
+            class_weight=weight,
+            callbacks=callbacks,
+            verbose=1
+        )
+        model.save('saved_models/' + get_model_name(i))
+        plot_accuracy(history, i)
+        plot_loss(history, i)
+        plot_sensitivity(history, i)
+        plot_specificity(history, i)
         break
 
 
 if __name__ == '__main__':
-    path = 'data/csv/'
-    # n_splits = 5
-    # random_state = 1
-    # BATCH_SIZE = 64
-    # EPOCHS = 300
-    # train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
-    read_data(path, padding="same")
+    path = 'data/train/'
+    n_splits = 5
+    random_state = 1
+    BATCH_SIZE = 32
+    EPOCHS = 300
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
