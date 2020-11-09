@@ -34,17 +34,21 @@ def read_data(path, padding="same"):
     pssm_files = os.listdir(path)
     data = []
     labels = []
-
-    for pssm_file in pssm_files:
-        df = pd.read_csv(path + pssm_file, sep=',', header=None)
-        df = np.asarray(df)
-        if padding == "pad_sequence":
-            df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
-        elif padding == "same":
-            df = pad_same(df, maxlen=MAX_LEN)
-        label = int(pssm_file.split('_')[1])
-        data.append(df)
-        labels.append(label)
+    with np.printoptions(threshold=np.inf):
+        for pssm_file in pssm_files:
+            df = pd.read_csv(path + pssm_file, sep=',', header=None)
+            df = np.asarray(df)
+            print(df)
+            print(sequence.pad_sequences(df.T, maxlen=MAX_LEN))
+            if padding == "pad_sequence":
+                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
+            elif padding == "same":
+                df = pad_same(df, maxlen=MAX_LEN)
+            print(df)
+            label = int(pssm_file.split('_')[1])
+            data.append(df)
+            labels.append(label)
+            break
 
     data = np.asarray(data, dtype=object)
     labels = np.asarray(labels, dtype=int)
@@ -164,8 +168,9 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
 if __name__ == '__main__':
     path = 'data/train/'
-    n_splits = 5
-    random_state = 1
-    BATCH_SIZE = 32
-    EPOCHS = 300
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    # n_splits = 5
+    # random_state = 1
+    # BATCH_SIZE = 32
+    # EPOCHS = 300
+    # train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    read_data(path, padding="pad_sequence")
