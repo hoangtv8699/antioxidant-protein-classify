@@ -39,7 +39,7 @@ def read_data(path, padding="same"):
             df = pd.read_csv(path + pssm_file, sep=',', header=None)
             df = np.asarray(df)
             if padding == "pad_sequence":
-                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
+                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN, padding='post', truncating='post').T
             elif padding == "same":
                 df = pad_same(df, maxlen=MAX_LEN)
             label = int(pssm_file.split('_')[1])
