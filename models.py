@@ -1,14 +1,15 @@
-from distutils.command.config import config
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import MaxPooling1D
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Flatten
 from tensorflow.keras import backend as K
 import numpy as np
 
@@ -76,6 +77,36 @@ def models():
 
         Dense(256, activation='relu'),
         Dropout(0.2),
+        Dense(2, activation='softmax')
+    ])
+
+    optimizer = keras.optimizers.Adam(lr=0.001)
+
+    model.compile(
+        optimizer=optimizer,
+        loss='sparse_categorical_crossentropy',
+        metrics=[sensitivity, specificity, 'accuracy',]
+    )
+    return model
+
+
+def models_cnn():
+    model = Sequential([
+        Conv1D(256, 3, activation='relu', input_shape=(400, 20)),
+        MaxPooling1D(3),
+        Dropout(0.4),
+
+        Conv1D(256, 3, activation='relu'),
+        MaxPooling1D(2),
+        Dropout(0.4),
+
+        Reshape((-1, 1)),
+
+        LSTM(64),
+        Dropout(0.4),
+
+        Dense(512, activation='relu'),
+        Dropout(0.4),
         Dense(2, activation='softmax')
     ])
 

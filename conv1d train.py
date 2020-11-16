@@ -52,7 +52,7 @@ def read_data(path, padding="same"):
 
 
 def normalize(data):
-    return data / 10
+    return data
 
 
 def get_model_name(k):
@@ -105,7 +105,7 @@ def plot_specificity(history, i):
 
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
-    data, labels = read_data(path, padding="same")
+    data, labels = read_data(path, padding="pad_sequence")
     data = normalize(data)
 
     # create 10-fold cross validation
@@ -114,16 +114,16 @@ def train(n_splits, path, batch_size, epochs, random_state):
     i = 0
     for train_index, val_index in skf.split(data, labels):
         # split data
-        train_data = np.expand_dims(data[train_index], axis=-1).astype(np.float32)
+        train_data = data[train_index].astype(np.float32)
         train_labels = labels[train_index]
-        val_data = np.expand_dims(data[val_index], axis=-1).astype(np.float32)
+        val_data = data[val_index].astype(np.float32)
         val_labels = labels[val_index]
 
         print("number of train data: {}".format(len(train_data)))
         print("number of val data: {}".format(len(val_data)))
 
         # create model
-        model = models()
+        model = models_cnn()
         print(model.summary())
 
         # create weight
@@ -164,6 +164,6 @@ if __name__ == '__main__':
     path = 'data/csv/'
     n_splits = 5
     random_state = 1
-    BATCH_SIZE = 10
-    EPOCHS = 300
+    BATCH_SIZE = 64
+    EPOCHS = 100
     train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
