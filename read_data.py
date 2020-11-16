@@ -23,7 +23,6 @@ def pad_same(sequence, maxlen=400):
     cur_len = len(sequence)
     if cur_len > maxlen:
         return sequence[:maxlen, :]
-
     step = int(maxlen / cur_len - 1)
     for i in range(step):
         sequence = np.append(sequence, copy_sequence, axis=0)
@@ -31,7 +30,7 @@ def pad_same(sequence, maxlen=400):
     return np.append(sequence, copy_sequence[:append_len, :], axis=0)
 
 
-def read_data(path, padding="pad_sequence"):
+def read_data(path, padding="same"):
     pssm_files = os.listdir(path)
     data = []
     labels = []
@@ -106,7 +105,7 @@ def plot_specificity(history, i):
 
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
-    data, labels = read_data(path)
+    data, labels = read_data(path, padding="same")
     data = normalize(data)
 
     # create 10-fold cross validation
@@ -122,8 +121,6 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
         print("number of train data: {}".format(len(train_data)))
         print("number of val data: {}".format(len(val_data)))
-
-        print(train_data.shape)
 
         # # create model
         # model = models()

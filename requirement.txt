@@ -1,5 +1,6 @@
-tensorflow-gpu==2.2.0
-numpy
+tensorflow==2.3.0
+tensorflow-gpu==2.3.0
+numpy==1.18.5
 pandas
 biopython
 scikit-learn
