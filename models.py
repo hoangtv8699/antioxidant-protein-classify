@@ -15,21 +15,8 @@ import numpy as np
 
 
 def sensitivity(y_true, y_pred):
-    """Compute the confusion matrix for a set of predictions.
-
-        Parameters
-        ----------
-        y_pred   : predicted values for a batch if samples (must be binary: 0 or 1)
-        y_true   : correct values for the set of samples used (must be binary: 0 or 1)
-
-        Returns
-        -------
-        out : the sensitivity
-        """
-
     y_pred_bin = tf.math.argmax(y_pred, axis=-1)
-    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
-
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
     # as Keras Tensors
     TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32)
     FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32)
@@ -38,21 +25,8 @@ def sensitivity(y_true, y_pred):
 
 
 def specificity(y_true, y_pred):
-    """Compute the confusion matrix for a set of predictions.
-
-    Parameters
-    ----------
-    y_pred   : predicted values for a batch if samples (must be binary: 0 or 1)
-    y_true   : correct values for the set of samples used (must be binary: 0 or 1)
-
-    Returns
-    -------
-    out : the specificity
-    """
-
     y_pred_bin = tf.math.argmax(y_pred, axis=-1)
-    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin)
-
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
     # as Keras Tensors
     TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32)
     FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32)
@@ -62,7 +36,7 @@ def specificity(y_true, y_pred):
 
 def models():
     model = Sequential([
-        Conv2D(32, (3, 3), activation='relu', input_shape=(None, None, 1)),
+        Conv2D(32, (3, 3), activation='relu', input_shape=(400, 20, 1)),
         MaxPooling2D(2, 2),
         Dropout(0.2),
 
@@ -85,36 +59,6 @@ def models():
     model.compile(
         optimizer=optimizer,
         loss='sparse_categorical_crossentropy',
-        metrics=[sensitivity, specificity, 'accuracy',]
-    )
-    return model
-
-
-def models_cnn():
-    model = Sequential([
-        Conv1D(256, 3, activation='relu', input_shape=(400, 20)),
-        MaxPooling1D(3),
-        Dropout(0.4),
-
-        Conv1D(256, 3, activation='relu'),
-        MaxPooling1D(2),
-        Dropout(0.4),
-
-        Reshape((-1, 1)),
-
-        LSTM(64),
-        Dropout(0.4),
-
-        Dense(512, activation='relu'),
-        Dropout(0.4),
-        Dense(2, activation='softmax')
-    ])
-
-    optimizer = keras.optimizers.Adam(lr=0.001)
-
-    model.compile(
-        optimizer=optimizer,
-        loss='sparse_categorical_crossentropy',
-        metrics=[sensitivity, specificity, 'accuracy',]
+        metrics=[sensitivity, specificity, 'accuracy']
     )
     return model

@@ -8,11 +8,12 @@ import numpy as np
 import pandas as pd
 from Bio import SeqIO
 import re
-from models import models, models_cnn
+from models import models
 from sklearn.model_selection import StratifiedKFold
 from matplotlib import pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing import sequence
 
 MAX_LEN = 400
@@ -39,7 +40,7 @@ def read_data(path, padding="same"):
             df = pd.read_csv(path + pssm_file, sep=',', header=None)
             df = np.asarray(df)
             if padding == "pad_sequence":
-                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN).T
+                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN, padding='post', truncating='post').T
             elif padding == "same":
                 df = pad_same(df, maxlen=MAX_LEN)
             label = int(pssm_file.split('_')[1])
@@ -105,7 +106,7 @@ def plot_specificity(history, i):
 
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
-    data, labels = read_data(path, padding="same")
+    data, labels = read_data(path, padding="pad_sequence")
     data = normalize(data)
 
     # create 10-fold cross validation
@@ -131,15 +132,17 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
         # callback
         checkpoint = "saved_models"
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint,
-            save_weights_only=True,
-            save_freq=100)
+        es = EarlyStopping(
+            monitor="val_loss",
+            patience=10,
+            mode='min'
+        )
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
                                       patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
-                                      min_lr=0.0001)
+                                      min_lr=0.00001)
         callbacks = [
-            reduce_lr
+            reduce_lr,
+            es
         ]
 
         # train model
@@ -164,6 +167,6 @@ if __name__ == '__main__':
     path = 'data/csv/'
     n_splits = 5
     random_state = 1
-    BATCH_SIZE = 10
-    EPOCHS = 300
+    BATCH_SIZE = 16
+    EPOCHS = 100
     train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
