@@ -4,12 +4,14 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers import MaxPooling1D
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import backend as K
 import numpy as np
 
@@ -36,25 +38,44 @@ def specificity(y_true, y_pred):
 
 def models():
     model = Sequential([
-        Conv2D(32, (3, 3), activation='relu', input_shape=(400, 20, 1)),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
+        Input(shape=(20, 400, 1)),
 
+        ZeroPadding2D(1),
+        Conv2D(32, (3, 3), activation='relu'),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.4),
+
+        ZeroPadding2D(1),
         Conv2D(64, (3, 3), activation='relu'),
+        BatchNormalization(),
         MaxPooling2D(2, 2),
-        Dropout(0.2),
+        Dropout(0.4),
 
-        Reshape((-1, 1)),
+        ZeroPadding2D(1),
+        Conv2D(128, (3, 3), activation='relu'),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.4),
 
-        LSTM(256),
-        Dropout(0.2),
+        ZeroPadding2D(1),
+        Conv2D(256, (3, 3), activation='relu'),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.4),
 
-        Dense(256, activation='relu'),
-        Dropout(0.2),
+        Flatten(),
+        # Reshape((-1, 1)),
+        #
+        # LSTM(64),
+        # Dropout(0.2),
+
+        Dense(16, activation='relu'),
+        Dropout(0.4),
         Dense(2, activation='softmax')
     ])
 
-    optimizer = keras.optimizers.Adam(lr=0.001)
+    optimizer = keras.optimizers.Adam(lr=0.0001)
 
     model.compile(
         optimizer=optimizer,

@@ -1,23 +1,36 @@
-# -*- coding: utf-8 -*-
-import os
-import fnmatch
-import shutil
-import time
-
-import numpy as np
-import pandas as pd
-from Bio import SeqIO
-import re
-from models import models
-from sklearn.model_selection import StratifiedKFold
-from matplotlib import pyplot as plt
 import tensorflow as tf
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.preprocessing import sequence
-import random
+import numpy as np
+import matplotlib.pyplot as plt
+from Bio import SeqIO
+from sklearn.model_selection import StratifiedKFold
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.python.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras import backend as K
+
+from text_att_birnn import TextAttBiRNN
 
 MAX_LEN = 400
+
+
+def read_fasta(path, max_len=400):
+    # read the fasta sequences from input file
+    fasta_sequences = SeqIO.parse(open(path), 'fasta')
+    sequences = []
+    labels = []
+    for fasta in fasta_sequences:
+        # get name and value of each sequence
+        name, sequence = fasta.id.split('|'), str(fasta.seq)
+        sequences.append(sequence)
+        labels.append(int(name[1]))
+
+    tk = Tokenizer(num_words=None, char_level=True)
+    # Fitting
+    tk.fit_on_texts(sequences)
+    return pad_sequences(tk.texts_to_sequences(sequences), maxlen=max_len, padding='post',
+                         truncating='post'), np.asarray(labels)
 
 
 def balance_data(data, labels):
@@ -31,7 +44,6 @@ def balance_data(data, labels):
             posi.append(data[i])
         else:
             nega.append(data[i])
-
     j = 0
     for i in range(len(nega)):
         if i % 6 == 0:
@@ -45,41 +57,24 @@ def balance_data(data, labels):
     return np.asarray(balanced_data), np.asarray(balanced_labels)
 
 
-def pad_same(sequence, maxlen=400):
-    copy_sequence = np.copy(sequence)
-    cur_len = len(sequence)
-    if cur_len > maxlen:
-        return sequence[:maxlen, :]
-    step = int(maxlen / cur_len - 1)
-    for i in range(step):
-        sequence = np.append(sequence, copy_sequence, axis=0)
-    append_len = maxlen - len(sequence)
-    return np.append(sequence, copy_sequence[:append_len, :], axis=0)
+def sensitivity(y_true, y_pred):
+    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
+    # as Keras Tensors
+    TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32)
+    sensitivity = TP / (TP + FN + K.epsilon())
+    return sensitivity
 
 
-def read_data(path, padding="same"):
-    pssm_files = os.listdir(path)
-    data = []
-    labels = []
-    with np.printoptions(threshold=np.inf):
-        for pssm_file in pssm_files:
-            df = pd.read_csv(path + pssm_file, sep=',', header=None)
-            df = np.asarray(df)
-            if padding == "pad_sequence":
-                df = sequence.pad_sequences(df.T, maxlen=MAX_LEN, padding='post', truncating='post').T
-            elif padding == "same":
-                df = pad_same(df, maxlen=MAX_LEN)
-            label = int(pssm_file.split('_')[1])
-            data.append(df.T)
-            labels.append(label)
-
-    data = np.asarray(data, dtype=object)
-    labels = np.asarray(labels, dtype=int)
-    return data, labels
-
-
-def normalize(data):
-    return data / 10
+def specificity(y_true, y_pred):
+    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
+    # as Keras Tensors
+    TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32)
+    FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32)
+    specificity = TN / (TN + FP + K.epsilon())
+    return specificity
 
 
 def get_model_name(k):
@@ -129,11 +124,29 @@ def plot_specificity(history, i):
     plt.savefig('saved_plots/specificity_{}.png'.format(i))
     plt.clf()
 
+# print('Loading data...')
+# (x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+# print(len(x_train), 'train sequences')
+# print(len(x_test), 'test sequences')
+#
+# print('Pad sequences (samples x time)...')
+# x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
+# x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
+# print('x_train shape:', x_train.shape)
+# print('x_test shape:', x_test.shape)
 
-def train(n_splits, path, batch_size, epochs, random_state):
+if __name__ == '__main__':
     # read data
-    data, labels = read_data(path, padding="pad_sequence")
-    data = normalize(data)
+    path = 'training.fasta'
+    data, labels = read_fasta(path, max_len=MAX_LEN)
+
+    n_splits = 5
+    random_state = 1
+    max_features = 22
+    maxlen = 400
+    batch_size = 32
+    embedding_dims = 50
+    epochs = 30
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -141,9 +154,9 @@ def train(n_splits, path, batch_size, epochs, random_state):
     i = 0
     for train_index, val_index in skf.split(data, labels):
         # split data
-        train_data = np.expand_dims(data[train_index], axis=-1).astype(np.float32)
+        train_data = data[train_index]
         train_labels = labels[train_index]
-        val_data = np.expand_dims(data[val_index], axis=-1).astype(np.float32)
+        val_data = data[val_index]
         val_labels = labels[val_index]
 
         train_data, train_labels = balance_data(train_data, train_labels)
@@ -152,17 +165,17 @@ def train(n_splits, path, batch_size, epochs, random_state):
         print("number of val data: {}".format(len(val_data)))
 
         # create model
-        model = models()
-        print(model.summary())
+        print('Build model...')
+        model = TextAttBiRNN(maxlen, max_features, embedding_dims, class_num=2, last_activation='softmax')
+        model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy", sensitivity, specificity])
 
         # create weight
         weight = {0: 1, 1: 6}
 
         # callback
-        checkpoint = "saved_models"
         es = EarlyStopping(
             monitor="val_loss",
-            patience=50,
+            patience=10,
             mode='min'
         )
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
@@ -183,18 +196,20 @@ def train(n_splits, path, batch_size, epochs, random_state):
             class_weight=weight,
             callbacks=callbacks
         )
-        model.save('saved_models/' + get_model_name(i))
+        # model.save('saved_models/' + get_model_name(i))
         plot_accuracy(history, i)
         plot_loss(history, i)
         plot_sensitivity(history, i)
         plot_specificity(history, i)
         break
 
-
-if __name__ == '__main__':
-    path = 'data/csv/'
-    n_splits = 5
-    random_state = 1
-    BATCH_SIZE = 16
-    EPOCHS = 100
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+# print('Train...')
+# early_stopping = EarlyStopping(monitor='val_accuracy', patience=3, mode='max')
+# model.fit(x_train, y_train,
+#           batch_size=batch_size,
+#           epochs=epochs,
+#           callbacks=[early_stopping],
+#           validation_data=(x_test, y_test))
+#
+# print('Test...')
+# result = model.predict(x_test)
