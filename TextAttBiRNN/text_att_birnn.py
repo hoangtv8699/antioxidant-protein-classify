@@ -1,6 +1,6 @@
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Embedding, Dense, LSTM, Bidirectional
-from attention import Attention
+from TextAttBiRNN.attention import Attention
 
 
 class TextAttBiRNN(Model):
@@ -19,7 +19,7 @@ class TextAttBiRNN(Model):
         self.embedding = Embedding(self.max_features, self.embedding_dims, input_length=self.maxlen)
         self.bi_rnn = Bidirectional(LSTM(256, return_sequences=True))  # LSTM or GRU
         self.attention = Attention(self.maxlen)
-        self.dense = Dense(256, activation='relu')
+        self.dense = Dense(126, activation='relu')
         self.classifier = Dense(self.class_num, activation=self.last_activation)
 
     def call(self, inputs):
