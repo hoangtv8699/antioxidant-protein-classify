@@ -8,19 +8,58 @@ import base64
 import serial
 import time
 
+ser = serial.Serial(
+    port='/dev/ttyUSB0',
+    baudrate=9600
+)
+
+data = {
+    "temp": 0,
+    "humidity": 0,
+    "light": 54612,
+    "ec": 5,
+    "ph": 8,
+    "waterTemp": 0
+}
+
+state = {
+    "relay1": 0,
+    "relay2": 0,
+    "relay3": 0,
+    "relay4": 0
+}
 
 
 def readData():
     while True:
         try:
-            ser = serial.Serial(
-                port='/dev/ttyUSB0',
-                baudrate=9600,
-            )
             read_serial = ser.readline()
-            return read_serial
+            jsonTmp = json.loads(read_serial)
+
+            data['temp'] = jsonTmp['temp']
+            data['humidity'] = jsonTmp['humidity']
+            data['light'] = jsonTmp['light']
+            data['ec'] = jsonTmp['ec']
+            data['ph'] = jsonTmp['ph']
+            data['waterTemp'] = jsonTmp['waterTemp']
+
+            state['relay1'] = jsonTmp['relay1']
+            state['relay2'] = jsonTmp['relay2']
+            state['relay3'] = jsonTmp['relay3']
+            state['relay4'] = jsonTmp['relay4']
         except Exception as e:
+            print(e)
             return None
+        break
+
+
+def writeData(data):
+    while True:
+        try:
+            ser.write(data)
+            print("write data to serial: " + str(data))
+        except Exception as e:
+            print(e)
         break
 
 
@@ -48,16 +87,16 @@ def getPubkey():
                 client.connect("broker.hivemq.com", 1883)
 
                 client.loop_start()
-                client.subscribe("test12", qos=1)
+                client.subscribe("Farm", qos=1)
 
-                id = getmac()
+                id = str(getmac())
                 message = {
                     "type": 1,
                     "data": {
                         "id": id
                     }
                 }
-                publish.single("test12", json.dumps(message), hostname="broker.hivemq.com", port=1883,
+                publish.single("Farm", json.dumps(message), hostname="broker.hivemq.com", port=1883,
                                retain=False, qos=1)
                 while True:
                     pubkey = f.read()
@@ -72,15 +111,30 @@ if __name__ == '__main__':
     pkk = RSA.importKey(pk)
     enc = PKCS1_OAEP.new(pkk)
     while True:
-        data = readData()
-        rs = enc.encrypt(data)
+        a = {
+            "type": 1,
+            "data": {
+                "relay1": 1,
+                "relay2": 1,
+                "relay3": 1,
+                "relay4": 1
+            }
+        }
+        writeData(json.dumps(a).encode('utf-8'))
+
+        readData()
+        print(data)
+        rs = enc.encrypt(json.dumps(data).encode('utf-8'))
 
         msg = {
             "type": 2,
-            "data": base64.encodebytes(rs).decode('utf-8')
+            "data": {
+                "id": str(getmac()),
+                "data": base64.encodebytes(rs).decode('utf-8')
+            }
         }
 
-        publish.single("test12", json.dumps(msg), hostname="broker.hivemq.com", port=1883,
+        publish.single("Farm", json.dumps(msg), hostname="broker.hivemq.com", port=1883,
                        retain=False, qos=1)
         print('published message: ' + str(msg))
         time.sleep(60)
