@@ -140,18 +140,18 @@ def models():
     embedding_layer = TokenAndPositionEmbedding(400, 22, embed_dim)
     x = embedding_layer(inputs)
     transformer_block1 = TransformerBlock(embed_dim, num_heads, 32)
-    transformer_block2 = TransformerBlock(embed_dim, num_heads, 64)
-    transformer_block3 = TransformerBlock(embed_dim, num_heads, 128)
-    transformer_block4 = TransformerBlock(embed_dim, num_heads, 256)
+    # transformer_block2 = TransformerBlock(embed_dim, num_heads, 64)
+    # transformer_block3 = TransformerBlock(embed_dim, num_heads, 128)
+    # transformer_block4 = TransformerBlock(embed_dim, num_heads, 256)
     x = transformer_block1(x)
-    x = transformer_block2(x)
-    x = transformer_block3(x)
-    x = transformer_block4(x)
+    # x = transformer_block2(x)
+    # x = transformer_block3(x)
+    # x = transformer_block4(x)
     x = layers.GlobalAveragePooling1D()(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(256, activation="relu")(x)
+    x = layers.Dense(32, activation="relu")(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(256, activation="relu")(x)
+    x = layers.Dense(32, activation="relu")(x)
     x = layers.Dropout(0.2)(x)
     outputs = layers.Dense(2, activation="softmax")(x)
 
@@ -195,7 +195,7 @@ def train(n_splits, path, batch_size, epochs, random_state):
             mode='min'
         )
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
-                                      patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
+                                      patience=5, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
                                       min_lr=0.00001)
         callbacks = [
             reduce_lr,

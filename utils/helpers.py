@@ -27,6 +27,20 @@ def balance_data(data, labels):
         else:
             nega.append(data[i])
 
+    # tmp = int(len(nega) / len(posi))
+    #
+    # posi_over = []
+    # for i in range(tmp):
+    #     posi_over += posi
+    #
+    # posi_over += posi[:len(nega) - len(posi_over)]
+    #
+    # for i in range(len(nega)):
+    #     balanced_data.append(posi_over[i])
+    #     balanced_labels.append(1)
+    #     balanced_data.append(nega[i])
+    #     balanced_labels.append(0)
+
     j = 0
     for i in range(len(nega)):
         if i % 6 == 0:

@@ -57,7 +57,7 @@ if __name__ == '__main__':
             mode='min'
         )
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
-                                      patience=10, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
+                                      patience=5, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
                                       min_lr=0.00001)
         callbacks = [
             reduce_lr,
