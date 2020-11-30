@@ -139,25 +139,26 @@ def models():
     inputs = layers.Input(shape=(400,))
     embedding_layer = TokenAndPositionEmbedding(400, 22, embed_dim)
     x = embedding_layer(inputs)
-    transformer_block1 = TransformerBlock(embed_dim, num_heads, 32)
+    # transformer_block1 = TransformerBlock(embed_dim, num_heads, 32)
     # transformer_block2 = TransformerBlock(embed_dim, num_heads, 64)
     # transformer_block3 = TransformerBlock(embed_dim, num_heads, 128)
-    # transformer_block4 = TransformerBlock(embed_dim, num_heads, 256)
-    x = transformer_block1(x)
+    transformer_block4 = TransformerBlock(embed_dim, num_heads, 256)
+    # x = transformer_block1(x)
     # x = transformer_block2(x)
     # x = transformer_block3(x)
-    # x = transformer_block4(x)
+    x = transformer_block4(x)
     x = layers.GlobalAveragePooling1D()(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(32, activation="relu")(x)
+    x = layers.Dense(256, activation="relu")(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(32, activation="relu")(x)
+    x = layers.Dense(256, activation="relu")(x)
     x = layers.Dropout(0.2)(x)
     outputs = layers.Dense(2, activation="softmax")(x)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
 
-    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy", sensitivity, specificity])
+    optimizer = keras.optimizers.Adam(lr=0.0001)
+    model.compile(optimizer, "sparse_categorical_crossentropy", metrics=["accuracy", sensitivity, specificity])
     return model
 
 
@@ -217,13 +218,36 @@ def train(n_splits, path, batch_size, epochs, random_state):
         plot_loss(history, i)
         plot_sensitivity(history, i)
         plot_specificity(history, i)
-        break
+        return model
 
 
 if __name__ == '__main__':
     path = 'data/training.fasta'
+    test = 'data/independent_2.csv'
     n_splits = 5
     random_state = 1
     BATCH_SIZE = 16
     EPOCHS = 100
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    model = train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    data, labels = read_csv(test, 400)
+
+    # model = keras.models.load_model("saved_models/model_0.h5",
+    #                                 custom_objects={"sensitivity": sensitivity, "specificity": specificity})
+
+    pre = model.predict(data)
+    pre_bin = np.argmax(pre, axis=-1)
+
+    # FP = []
+    # FN = []
+    #
+    # for i in range(len(labels)):
+    #     if pre_bin[i] == 1 and labels[i] == 0:
+    #         FP.append(pre[i])
+    #     elif pre_bin[i] == 0 and labels[i] == 1:
+    #         FN.append(pre[i])
+    #
+    # print('FP: ', FP)
+    # print('FN: ', FN)
+
+    print("sen: " + str(sensitivity(labels, pre)))
+    print("spe: " + str(specificity(labels, pre)))

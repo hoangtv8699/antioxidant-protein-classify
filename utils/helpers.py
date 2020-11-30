@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 
 import pandas as pd
 import tensorflow as tf
+import csv
 from matplotlib import pyplot as plt
 from tensorflow.keras import backend as K
 from tensorflow.keras.preprocessing import sequence
@@ -97,6 +98,25 @@ def read_fasta(path, max_len=400):
         name, sequence = fasta.id.split('|'), str(fasta.seq)
         sequences.append(sequence)
         labels.append(int(name[1]))
+
+    tk = Tokenizer(num_words=None, char_level=True)
+    # Fitting
+    tk.fit_on_texts(sequences)
+    return pad_sequences(tk.texts_to_sequences(sequences), maxlen=max_len, padding='post',
+                         truncating='post'), np.asarray(labels)
+
+
+def read_csv(path, max_len=400):
+    df = pd.read_csv(path, skipinitialspace=True)
+
+    sequences = []
+    labels = []
+    for index, row in df.iterrows():
+        label = 1
+        if row['SEQCLASS'] == 'non-antioxidant':
+            label = 0
+        sequences.append(row['SEQUENCE'])
+        labels.append(label)
 
     tk = Tokenizer(num_words=None, char_level=True)
     # Fitting
