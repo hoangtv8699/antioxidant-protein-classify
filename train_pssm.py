@@ -70,7 +70,7 @@ def models():
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
     data, labels = read_data(path, padding="pad_sequence")
-    data = normalize_data(data)
+    # data = normalize_data(data)
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -78,9 +78,16 @@ def train(n_splits, path, batch_size, epochs, random_state):
     i = 0
     for train_index, val_index in skf.split(data, labels):
         # split data
-        train_data = np.expand_dims(data[train_index], axis=-1).astype(np.float32)
+        train_data = data[train_index]
+        val_data = data[val_index]
+        # normalize data
+        train_data, train_sm, train_sd = normalize_common(train_data)
+        val_data = normalize(val_data, train_sm, train_sd)
+        print('train_sm: {}, train_sd: {}'.format(train_sm, train_sd))
+
+        train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
         train_labels = labels[train_index]
-        val_data = np.expand_dims(data[val_index], axis=-1).astype(np.float32)
+        val_data = np.expand_dims(val_data, axis=-1).astype(np.float32)
         val_labels = labels[val_index]
 
         train_data, train_labels = balance_data(train_data, train_labels)
@@ -120,9 +127,10 @@ def train(n_splits, path, batch_size, epochs, random_state):
             validation_data=(val_data, val_labels),
             # class_weight=weight,
             callbacks=callbacks,
-            shuffle=True
+            shuffle=True,
+            verbose=2
         )
-        model.save('saved_models/no weight 19387/' + get_model_name(i))
+        model.save('saved_models/no weight/' + get_model_name(i))
         plot_accuracy(history, i)
         plot_loss(history, i)
         plot_sensitivity(history, i)
@@ -133,37 +141,29 @@ def train(n_splits, path, batch_size, epochs, random_state):
 if __name__ == '__main__':
     path = 'data/csv/'
     test_path = 'data/test/independent_2/'
-    # n_splits = 5
-    # random_state = random.randint(0, 19999)
-    # print(random_state)
-    # BATCH_SIZE = 16
-    # EPOCHS = 100
-    # train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    n_splits = 5
+    random_state = random.randint(0, 19999)
+    print(random_state)
+    BATCH_SIZE = 16
+    EPOCHS = 100
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
     data, labels = read_data(test_path, padding="pad_sequence")
-    data = normalize_data(data)
+    # data = normalize_data(data)
+
+    sm = -0.6398472222222161
+    sd = 1.8733625480452594
+    data = normalize(data, sm, sd)
+
     data = np.expand_dims(data, axis=-1).astype(np.float32)
 
-    model_paths = os.listdir("saved_models/no weight 19387/")
+    model_paths = os.listdir("saved_models/no weight/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model("saved_models/no weight 19387/" + model_path,
+        model.append(keras.models.load_model("saved_models/no weight/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity}))
 
     pre = voting(model, data)
-    # pre_bin = np.argmax(pre, axis=-1)
-
-    # FP = []
-    # FN = []
-    #
-    # for i in range(len(labels)):
-    #     if pre_bin[i] == 1 and labels[i] == 0:
-    #         FP.append(pre[i])
-    #     elif pre_bin[i] == 0 and labels[i] == 1:
-    #         FN.append(pre[i])
-    #
-    # print('FP: ', FP)
-    # print('FN: ', FN)
 
     print("sen: " + str(sensitivity(labels, pre)))
     print("spe: " + str(specificity(labels, pre)))

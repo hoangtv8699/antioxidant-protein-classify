@@ -33,6 +33,28 @@ def normalize_data(datas):
     return data_copy
 
 
+def normalize_common(data):
+    sample_mean = 0
+    for sequence in data:
+        for row in sequence:
+            sample_mean += sum(row)
+    sample_mean /= (data.shape[0] * data.shape[1] * data.shape[2] + K.epsilon())
+
+    standard_deviation = 0
+    for sequence in data:
+        for row in sequence:
+            standard_deviation += sum([pow(x - sample_mean, 2) for x in row])
+    standard_deviation = math.sqrt(standard_deviation / (data.shape[0] * data.shape[1] * data.shape[2] + K.epsilon()))
+
+    data = (data - sample_mean) / (standard_deviation + K.epsilon())
+    return data, sample_mean, standard_deviation
+
+
+def normalize(data, sample_mean, standard_deviation):
+    data = (data - sample_mean) / (standard_deviation + K.epsilon())
+    return data
+
+
 def balance_data(data, labels):
     posi = []
     nega = []
