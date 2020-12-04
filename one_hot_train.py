@@ -22,7 +22,7 @@ from utils.helpers import *
 
 def models():
     model = Sequential([
-        Input(shape=(20, 400, 1)),
+        Input(shape=(21, 400, 1)),
 
         ZeroPadding2D(1),
         Conv2D(32, (3, 3), activation='relu'),
@@ -69,8 +69,7 @@ def models():
 
 def train(n_splits, path, batch_size, epochs, random_state):
     # read data
-    data, labels = read_data(path, padding="pad_sequence")
-    data = normalize_data(data)
+    data, labels = read_fasta(path, max_len=400, encode='onehot')
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -93,7 +92,7 @@ def train(n_splits, path, batch_size, epochs, random_state):
         print(model.summary())
 
         # create weight
-        weight = {0: 1, 1: 2}
+        weight = {0: 1, 1: 6}
 
         # callback
         checkpoint = "saved_models"
@@ -118,11 +117,11 @@ def train(n_splits, path, batch_size, epochs, random_state):
             batch_size=batch_size,
             epochs=epochs,
             validation_data=(val_data, val_labels),
-            # class_weight=weight,
+            class_weight=weight,
             callbacks=callbacks,
             shuffle=True
         )
-        model.save('saved_models/no weight 19387/' + get_model_name(i))
+        model.save('saved_models/one hot/' + get_model_name(i))
         plot_accuracy(history, i)
         plot_loss(history, i)
         plot_sensitivity(history, i)
@@ -131,22 +130,20 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
 
 if __name__ == '__main__':
-    path = 'data/csv/'
-    test_path = 'data/test/independent_2/'
-    # n_splits = 5
-    # random_state = random.randint(0, 19999)
-    # print(random_state)
-    # BATCH_SIZE = 16
-    # EPOCHS = 100
-    # train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
-    data, labels = read_data(test_path, padding="pad_sequence")
-    data = normalize_data(data)
+    path = 'data/training.fasta'
+    test_path = 'data/independent_2.csv'
+    n_splits = 5
+    random_state = 5312
+    BATCH_SIZE = 16
+    EPOCHS = 100
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
+    data, labels = read_csv(test_path, max_len=400, encode='onehot')
     data = np.expand_dims(data, axis=-1).astype(np.float32)
 
-    model_paths = os.listdir("saved_models/no weight 19387/")
+    model_paths = os.listdir("saved_models/one hot/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model("saved_models/no weight 19387/" + model_path,
+        model.append(keras.models.load_model("saved_models/one hot/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity}))
 
@@ -168,5 +165,5 @@ if __name__ == '__main__':
     print("sen: " + str(sensitivity(labels, pre)))
     print("spe: " + str(specificity(labels, pre)))
     print("mcc: " + str(mcc(labels, pre)))
-    print("auc: " + str(auc(labels, pre)))
+
 

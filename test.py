@@ -1,11 +1,5 @@
-from tensorflow import keras
+import tensorflow as tf
 
-vocab_size = 20000  # Only consider the top 20k words
-maxlen = 200  # Only consider the first 200 words of each movie review
-(x_train, y_train), (x_val, y_val) = keras.datasets.imdb.load_data(num_words=vocab_size)
-print(len(x_train), "Training sequences")
-print(len(x_val), "Validation sequences")
-x_train = keras.preprocessing.sequence.pad_sequences(x_train, maxlen=maxlen)
-x_val = keras.preprocessing.sequence.pad_sequences(x_val, maxlen=maxlen)
-
-print(x_train[0])
+m = tf.keras.metrics.AUC()
+m.update_state([0, 0, 1, 1], [0, 1, 0, 1])
+print(m.result().numpy())
