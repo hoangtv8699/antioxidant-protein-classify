@@ -17,8 +17,6 @@ from tensorflow.keras.preprocessing import sequence
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 
-np.set_printoptions(threshold=np.inf)
-
 
 def normalize_data(datas):
     data_copy = np.copy(datas)
@@ -79,10 +77,10 @@ def balance_data(data, labels):
     #         random.shuffle(posi)
     #     balanced_data.append(nega[i])
     #     balanced_labels.append(0)
-
+    tmp = int(len(nega) / len(posi))
     j = 0
     for i in range(len(nega)):
-        if i % 6 == 0:
+        if i % tmp == 0:
             if j < len(posi):
                 balanced_data.append(posi[j])
                 balanced_labels.append(1)
@@ -261,21 +259,21 @@ def mcc(y_true, y_pred):
     y_pred_bin = tf.math.argmax(y_pred, axis=-1)
     confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
     # as Keras Tensors
-    TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32).numpy()
-    FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32).numpy()
-    TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32).numpy()
-    FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32).numpy()
+    TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32)
+    TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32)
+    FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32)
 
     MCC = (TP * TN) - (FP * FN)
-    MCC /= (np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)) + K.epsilon())
+    MCC /= (tf.math.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)) + K.epsilon())
     return MCC
 
 
 def auc(y_true, y_pred):
     y_pred_bin = tf.math.argmax(y_pred, axis=-1)
     m = tf.keras.metrics.AUC()
-    m.update_state(y_true, y_pred_bin)
-    return m.result().numpy()
+    m.update_state(y_true, tf.reshape(y_pred_bin, y_true.shape))
+    return m.result()
 
 
 def voting(models, data):
@@ -291,3 +289,35 @@ def voting(models, data):
             tmp[x[i]] += 1
         pre.append(tmp)
     return pre
+
+
+def average(models, data):
+    pre = []
+    for model in models:
+        pre.append(model.predict(data))
+
+    ave = []
+    for i in range(len(pre[0])):
+        tmp = [0, 0]
+        for j in range(len(pre)):
+            tmp[0] += pre[j][i][0]
+            tmp[1] += pre[j][i][1]
+        tmp[0] /= 5
+        tmp[1] /= 5
+        ave.append(tmp)
+    return ave
+
+
+def median(models, data):
+    pre = []
+    for model in models:
+        pre.append(model.predict(data))
+
+    med = []
+    for i in range(len(pre[0])):
+        b = []
+        for j in range(len(pre)):
+            b.append(pre[j][i])
+        med.append(np.median(b, axis=0))
+    return med
+

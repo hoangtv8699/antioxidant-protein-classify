@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import pickle
 import numpy as np
-from dateutil.parser import _resultbase
 from sklearn.model_selection import StratifiedKFold
 from tensorflow import keras
 from tensorflow.keras.layers import BatchNormalization
@@ -16,6 +15,7 @@ from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.metrics import AUC
 
 from utils.helpers import *
 
@@ -62,15 +62,15 @@ def models():
     model.compile(
         optimizer=optimizer,
         loss='sparse_categorical_crossentropy',
-        metrics=[sensitivity, specificity, 'accuracy']
+        metrics=[sensitivity, specificity, mcc, 'accuracy']
     )
     return model
 
 
-def train(n_splits, path, batch_size, epochs, random_state):
+def train(n_splits, path, batch_size, epochs, random_state, save_path_model="saved_models/", save_path_his="saved_histories/"):
     # read data
     data, labels = read_data(path, padding="pad_sequence")
-    # data = normalize_data(data)
+    data = normalize_data(data)
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -80,10 +80,6 @@ def train(n_splits, path, batch_size, epochs, random_state):
         # split data
         train_data = data[train_index]
         val_data = data[val_index]
-        # normalize data
-        train_data, train_sm, train_sd = normalize_common(train_data)
-        val_data = normalize(val_data, train_sm, train_sd)
-        print('train_sm: {}, train_sd: {}'.format(train_sm, train_sd))
 
         train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
         train_labels = labels[train_index]
@@ -92,18 +88,26 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
         train_data, train_labels = balance_data(train_data, train_labels)
 
-        print("number of train data: {}".format(len(train_data)))
-        print("number of val data: {}".format(len(val_data)))
+        train_posi = sum(train_labels)
+        train_nega = len(train_labels) - train_posi
+        val_posi = sum(val_labels)
+        val_nega = len(val_labels) - val_posi
+
+        print("number of train positive: {}".format(train_posi))
+        print("number of train negative: {}".format(train_nega))
+        print("number of val positive: {}".format(val_posi))
+        print("number of val negative: {}".format(val_nega))
+
+        print(train_labels.shape)
 
         # create model
         model = models()
         print(model.summary())
 
         # create weight
-        weight = {0: 1, 1: 2}
+        weight = {0: 1, 1: 6}
 
         # callback
-        checkpoint = "saved_models"
         es = EarlyStopping(
             monitor="val_loss",
             patience=10,
@@ -130,43 +134,24 @@ def train(n_splits, path, batch_size, epochs, random_state):
             shuffle=True,
             verbose=2
         )
-        model.save('saved_models/no weight/' + get_model_name(i))
-        plot_accuracy(history, i)
-        plot_loss(history, i)
-        plot_sensitivity(history, i)
-        plot_specificity(history, i)
+        model.save(save_path_model + get_model_name(i))
+        pickle.dump(history.history, open(save_path_his + "model_" + str(i), 'wb'), pickle.HIGHEST_PROTOCOL)
+        # history = pickle.load(open(save_path_his + "model_" + str(i), 'wb'))
         i += 1
 
 
 if __name__ == '__main__':
     path = 'data/csv/'
-    test_path = 'data/test/independent_2/'
-    n_splits = 5
+    n_splits = 10
     random_state = random.randint(0, 19999)
-    print(random_state)
     BATCH_SIZE = 16
-    EPOCHS = 100
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state)
-    data, labels = read_data(test_path, padding="pad_sequence")
-    # data = normalize_data(data)
+    EPOCHS = 200
+    save_path_model = "saved_models/" + str(random_state) + "/"
+    save_path_his = "saved_histories/" + str(random_state) + "/"
+    if not os.path.isdir(save_path_model):
+        os.mkdir(save_path_model)
+    if not os.path.isdir(save_path_his):
+        os.mkdir(save_path_his)
 
-    sm = -0.6398472222222161
-    sd = 1.8733625480452594
-    data = normalize(data, sm, sd)
-
-    data = np.expand_dims(data, axis=-1).astype(np.float32)
-
-    model_paths = os.listdir("saved_models/no weight/")
-    model = []
-    for model_path in model_paths:
-        model.append(keras.models.load_model("saved_models/no weight/" + model_path,
-                                             custom_objects={"sensitivity": sensitivity,
-                                                             "specificity": specificity}))
-
-    pre = voting(model, data)
-
-    print("sen: " + str(sensitivity(labels, pre)))
-    print("spe: " + str(specificity(labels, pre)))
-    print("mcc: " + str(mcc(labels, pre)))
-    print("auc: " + str(auc(labels, pre)))
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, save_path_model=save_path_model, save_path_his=save_path_his)
 
