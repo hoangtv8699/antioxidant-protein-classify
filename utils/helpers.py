@@ -269,6 +269,19 @@ def mcc(y_true, y_pred):
     return MCC
 
 
+def acc(y_true, y_pred):
+    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
+    confusion_matrix = tf.math.confusion_matrix(y_true, y_pred_bin, num_classes=2)
+    # as Keras Tensors
+    TP = tf.cast(confusion_matrix[1, 1], dtype=tf.float32)
+    FN = tf.cast(confusion_matrix[1, 0], dtype=tf.float32)
+    TN = tf.cast(confusion_matrix[0, 0], dtype=tf.float32)
+    FP = tf.cast(confusion_matrix[0, 1], dtype=tf.float32)
+
+    acc = (TP + TN) / (TP + TN + FP + FN + K.epsilon())
+    return acc
+
+
 def auc(y_true, y_pred):
     y_pred_bin = tf.math.argmax(y_pred, axis=-1)
     m = tf.keras.metrics.AUC()
@@ -320,4 +333,3 @@ def median(models, data):
             b.append(pre[j][i])
         med.append(np.median(b, axis=0))
     return med
-
