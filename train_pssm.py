@@ -20,9 +20,9 @@ from tensorflow.keras.metrics import AUC
 from utils.helpers import *
 
 
-def models():
+def models(maxlen=400):
     model = Sequential([
-        Input(shape=(20, 400, 1)),
+        Input(shape=(20, maxlen, 1)),
 
         ZeroPadding2D(1),
         Conv2D(32, (3, 3), activation='relu'),
@@ -67,9 +67,10 @@ def models():
     return model
 
 
-def train(n_splits, path, batch_size, epochs, random_state, save_path_model="saved_models/", save_path_his="saved_histories/"):
+def train(n_splits, path, batch_size, epochs, random_state, maxlen=200,
+          save_path_model="saved_models/", save_path_his="saved_histories/"):
     # read data
-    data, labels = read_data(path, padding="pad_sequence")
+    data, labels = read_data(path, padding="pad_sequence", maxlen=maxlen)
     data = normalize_data(data)
 
     # create 10-fold cross validation
@@ -101,7 +102,7 @@ def train(n_splits, path, batch_size, epochs, random_state, save_path_model="sav
         print(train_labels.shape)
 
         # create model
-        model = models()
+        model = models(maxlen)
         print(model.summary())
 
         # create weight
@@ -138,14 +139,17 @@ def train(n_splits, path, batch_size, epochs, random_state, save_path_model="sav
         pickle.dump(history.history, open(save_path_his + "model_" + str(i), 'wb'), pickle.HIGHEST_PROTOCOL)
         # history = pickle.load(open(save_path_his + "model_" + str(i), 'wb'))
         i += 1
+        break
 
 
 if __name__ == '__main__':
     path = 'data/csv/'
     n_splits = 10
-    random_state = random.randint(0, 19999)
+    # random_state = random.randint(0, 19999)
+    random_state = 5363
     BATCH_SIZE = 16
     EPOCHS = 200
+    print(random_state)
     save_path_model = "saved_models/" + str(random_state) + "/"
     save_path_his = "saved_histories/" + str(random_state) + "/"
     if not os.path.isdir(save_path_model):
@@ -153,5 +157,6 @@ if __name__ == '__main__':
     if not os.path.isdir(save_path_his):
         os.mkdir(save_path_his)
 
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, save_path_model=save_path_model, save_path_his=save_path_his)
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, maxlen=600,
+          save_path_model=save_path_model, save_path_his=save_path_his)
 

@@ -103,7 +103,7 @@ def pad_same(sequence, maxlen=400):
     return np.append(sequence, copy_sequence[:append_len, :], axis=0)
 
 
-def read_data(path, padding="pad_sequence"):
+def read_data(path, padding="pad_sequence", maxlen=400):
     pssm_files = os.listdir(path)
     data = []
     labels = []
@@ -112,9 +112,9 @@ def read_data(path, padding="pad_sequence"):
             df = pd.read_csv(path + pssm_file, sep=',', header=None)
             df = np.asarray(df)
             if padding == "pad_sequence":
-                df = sequence.pad_sequences(df.T, maxlen=400, padding='post', truncating='post').T
+                df = sequence.pad_sequences(df.T, maxlen=maxlen, padding='post', truncating='post').T
             elif padding == "same":
-                df = pad_same(df, maxlen=400)
+                df = pad_same(df, maxlen=maxlen)
             label = int(pssm_file.split('_')[1])
             data.append(df.T)
             labels.append(label)
