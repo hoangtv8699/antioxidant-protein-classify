@@ -8,17 +8,15 @@ from utils.helpers import *
 
 if __name__ == '__main__':
     test_path = 'data/test/independent_2/'
-    path = 'data/csv/'
 
     data, labels = read_data(test_path, padding="pad_sequence")
     data = normalize_data(data)
-
     data = np.expand_dims(data, axis=-1).astype(np.float32)
 
-    model_paths = os.listdir("saved_models/2538/")
+    model_paths = os.listdir("saved_models/3128/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model("saved_models/2538/" + model_path,
+        model.append(keras.models.load_model("saved_models/3128/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity,
                                                              "mcc": mcc,
