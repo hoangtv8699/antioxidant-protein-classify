@@ -157,6 +157,6 @@ if __name__ == '__main__':
     if not os.path.isdir(save_path_his):
         os.mkdir(save_path_his)
 
-    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, maxlen=600,
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, maxlen=400,
           save_path_model=save_path_model, save_path_his=save_path_his)
 
