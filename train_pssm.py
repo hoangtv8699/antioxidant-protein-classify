@@ -18,6 +18,7 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.metrics import AUC
 
 from utils.helpers import *
+from utils.adasopt import AdasOptimizer
 
 
 def models(maxlen=400):
@@ -57,7 +58,8 @@ def models(maxlen=400):
         Dense(2, activation='softmax')
     ])
 
-    optimizer = keras.optimizers.Adam(lr=0.0001)
+    # optimizer = keras.optimizers.Adam(lr=0.0001)
+    optimizer = AdasOptimizer(lr=0.0001)
 
     model.compile(
         optimizer=optimizer,
@@ -119,7 +121,7 @@ def train(n_splits, path, batch_size, epochs, random_state, maxlen=200,
                                       patience=5, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
                                       min_lr=0.00001)
         callbacks = [
-            reduce_lr,
+            # reduce_lr,
             es
         ]
 
@@ -139,19 +141,18 @@ def train(n_splits, path, batch_size, epochs, random_state, maxlen=200,
         pickle.dump(history.history, open(save_path_his + "model_" + str(i), 'wb'), pickle.HIGHEST_PROTOCOL)
         # history = pickle.load(open(save_path_his + "model_" + str(i), 'wb'))
         i += 1
-        break
 
 
 if __name__ == '__main__':
     path = 'data/csv/'
     n_splits = 10
     # random_state = random.randint(0, 19999)
-    random_state = 5363
+    random_state = 6210
     BATCH_SIZE = 16
     EPOCHS = 200
     print(random_state)
-    save_path_model = "saved_models/" + str(random_state) + "/"
-    save_path_his = "saved_histories/" + str(random_state) + "/"
+    save_path_model = "saved_models/" + str(random_state) + " adas/"
+    save_path_his = "saved_histories/" + str(random_state) + " adas/"
     if not os.path.isdir(save_path_model):
         os.mkdir(save_path_model)
     if not os.path.isdir(save_path_his):

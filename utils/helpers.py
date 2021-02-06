@@ -192,8 +192,8 @@ def get_model_name(k):
 
 
 def plot_loss(history, i):
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
+    plt.plot(history['loss'])
+    plt.plot(history['val_loss'])
     plt.title('model loss')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -203,8 +203,8 @@ def plot_loss(history, i):
 
 
 def plot_accuracy(history, i):
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
+    plt.plot(history['accuracy'])
+    plt.plot(history['val_accuracy'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
@@ -214,8 +214,8 @@ def plot_accuracy(history, i):
 
 
 def plot_sensitivity(history, i):
-    plt.plot(history.history['sensitivity'])
-    plt.plot(history.history['val_sensitivity'])
+    plt.plot(history['sensitivity'])
+    plt.plot(history['val_sensitivity'])
     plt.title('model sensitivity')
     plt.ylabel('sensitivity')
     plt.xlabel('epoch')
@@ -225,8 +225,8 @@ def plot_sensitivity(history, i):
 
 
 def plot_specificity(history, i):
-    plt.plot(history.history['specificity'])
-    plt.plot(history.history['val_specificity'])
+    plt.plot(history['specificity'])
+    plt.plot(history['val_specificity'])
     plt.title('model specificity')
     plt.ylabel('specificity')
     plt.xlabel('epoch')

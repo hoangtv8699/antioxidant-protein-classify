@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedKFold
 from tensorflow import keras
 from utils.helpers import *
+from utils.adasopt import *
 
 if __name__ == '__main__':
     test_path = 'data/test/independent_2/'
@@ -15,14 +16,15 @@ if __name__ == '__main__':
     data = normalize_data(data)
     data = np.expand_dims(data, axis=-1).astype(np.float32)
 
-    model_paths = os.listdir("saved_models/8730/")
+    model_paths = os.listdir("saved_models/norm 5363/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model("saved_models/8730/" + model_path,
+        model.append(keras.models.load_model("saved_models/norm 5363/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity,
                                                              "mcc": mcc,
-                                                             }))
+                                                             # 'AdasOptimizer': AdasOptimizer
+                                                             }, compile=False))
 
     i = 0
     a = []
