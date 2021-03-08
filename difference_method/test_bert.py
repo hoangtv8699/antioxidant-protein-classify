@@ -10,15 +10,36 @@ from utils.helpers import *
 from utils.adasopt import *
 
 if __name__ == '__main__':
-    test_path = 'data/test/independent_2/'
-    data, labels = read_data(test_path)
-    print(data.shape)
+    bert_test_path = 'data/bert_test_20/independent_2/'
+    pssm_test_path = '../data/test/independent_2/'
+
+    # read data
+    data_pssm, labels = read_data(pssm_test_path, padding="pad_sequence", maxlen=400)
+    # data_bert, labels_bert = read_bert(bert_test_path, padding="pad_sequence", maxlen=400)
+
+    with open('../data/independent_2_data_bert.npy', 'rb') as f:
+        data_bert = np.load(f, allow_pickle=True)
+    with open('../data/independent_2_labels_bert.npy', 'rb') as f:
+        labels_bert = np.load(f, allow_pickle=True)
+
+    data_bert = data_bert[:, :10, :]
+
+    print("pssm shape: " + str(data_pssm.shape))
+    print("bert shape: " + str(data_bert.shape))
+    # data_pssm = normalize_data(data_pssm)
+    data = np.append(data_pssm, data_bert, axis=1)
+    # data = np.append(data_bert, data_pssm, axis=1)
+
+    # data = normalize_data(data)
+
+    print("final shape: " + str(data.shape))
+
     data = np.expand_dims(data, axis=-1).astype(np.float32)
-    path = "saved_models/3518/"
-    model_paths = os.listdir(path)
+
+    model_paths = os.listdir("../saved_models/2538 bert top 10/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model(path + model_path,
+        model.append(keras.models.load_model("saved_models/2538 bert top 10/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity,
                                                              "mcc": mcc,
@@ -91,4 +112,4 @@ if __name__ == '__main__':
     a.append(b)
     b = []
 
-    pd.DataFrame(a).to_csv('test.csv')
+    pd.DataFrame(a).to_csv('../test.csv')

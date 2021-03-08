@@ -10,15 +10,30 @@ from utils.helpers import *
 from utils.adasopt import *
 
 if __name__ == '__main__':
-    test_path = 'data/test/independent_2/'
-    data, labels = read_data(test_path)
-    print(data.shape)
+    one_hot_test_path = '../data/independent_2.csv'
+    pssm_test_path = '../data/test/independent_2/'
+    blosum_test_path = '../data/independent_2.csv'
+
+    # read data
+    data_pssm, labels = read_data(pssm_test_path, padding="pad_sequence", maxlen=400)
+    data_one_hot, labels_one_hot = read_csv(one_hot_test_path, maxlen=400, encode='onehot')
+    data_blosum, labels_blosum = read_blosum(blosum_test_path, maxlen=400, type='csv')
+
+    print("pssm shape: " + str(data_pssm.shape))
+    print("bert shape: " + str(data_one_hot.shape))
+
+    data_pssm = normalize_data(data_pssm)
+    data = np.append(data_pssm, data_blosum, axis=1)
+    data = np.append(data, data_one_hot, axis=1)
+
+    print("final shape: " + str(data.shape))
+
     data = np.expand_dims(data, axis=-1).astype(np.float32)
-    path = "saved_models/3518/"
-    model_paths = os.listdir(path)
+
+    model_paths = os.listdir("saved_models/3568 one-hot blosum/")
     model = []
     for model_path in model_paths:
-        model.append(keras.models.load_model(path + model_path,
+        model.append(keras.models.load_model("saved_models/3568 one-hot blosum/" + model_path,
                                              custom_objects={"sensitivity": sensitivity,
                                                              "specificity": specificity,
                                                              "mcc": mcc,
@@ -91,4 +106,4 @@ if __name__ == '__main__':
     a.append(b)
     b = []
 
-    pd.DataFrame(a).to_csv('test.csv')
+    pd.DataFrame(a).to_csv('../test.csv')

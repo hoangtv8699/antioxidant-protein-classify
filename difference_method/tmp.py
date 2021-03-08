@@ -18,50 +18,20 @@ from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.metrics import AUC
 
 from utils.helpers import *
+from utils.iFeature_helper import *
 from utils.adasopt import AdasOptimizer
-from sklearn.utils import resample
 
 
-
-def models(maxlen=400):
+def models():
     model = Sequential([
-        Input(shape=(20, maxlen, 1)),
-
-        ZeroPadding2D(1),
-        Conv2D(32, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
-
-        ZeroPadding2D(1),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
-
-        ZeroPadding2D(1),
-        Conv2D(128, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
-
-        ZeroPadding2D(1),
-        Conv2D(256, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
-
-        Flatten(),
-        # Reshape((-1, 1)),
-        #
-        # LSTM(56),
-        # Dropout(0.2),
-
-        Dense(256, activation='relu'),
-        Dropout(0.2),
-        Dense(256, activation='relu'),
-        Dropout(0.2),
+        Dense(256, input_shape=(20, ), activation='relu'),
+        Dense(128, activation='relu'),
+        Dense(64, activation='relu'),
+        Dense(32, activation='relu'),
         Dense(2, activation='softmax')
     ])
 
-    optimizer = keras.optimizers.Adam(lr=0.0001)
-    # optimizer = AdasOptimizer(lr=0.0001)
+    optimizer = keras.optimizers.Adam(lr=0.001)
 
     model.compile(
         optimizer=optimizer,
@@ -71,17 +41,17 @@ def models(maxlen=400):
     return model
 
 
-def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
+def train(n_splits, path, batch_size, epochs, random_state, maxlen=400,
           save_path_model="saved_models/", save_path_his="saved_histories/"):
-    # read data
-    # data_pssm, labels = read_data(path_pssm, padding="pad_sequence", maxlen=maxlen)
+    # data, labels = read_fasta(path, maxlen=400, encode='token')
+    # data = encodes_amino_feature(data)[:, 1]
 
-    with open('data/train_data_pssm.npy', 'rb') as f:
-        data_pssm = np.load(f, allow_pickle=True)
-    with open('data/train_labels_pssm.npy', 'rb') as f:
-        labels = np.load(f, allow_pickle=True)
+    data, labels = read_iFeature('../data/iFeature/train/AAC.txt')
 
-    data = data_pssm
+    data = np.asarray(data)
+    labels = np.asarray(labels)
+
+    print("final shape: " + str(data.shape))
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -90,23 +60,9 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
     for train_index, val_index in skf.split(data, labels):
         # split data
         train_data = data[train_index]
-        val_data = data[val_index]
-
-        train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
         train_labels = labels[train_index]
-        val_data = np.expand_dims(val_data, axis=-1).astype(np.float32)
+        val_data = data[val_index]
         val_labels = labels[val_index]
-
-        # # resampling
-        # posi = train_data[train_labels == 1]
-        # nega = train_data[train_labels == 0]
-        #
-        # posi = resample(posi, replace=True, n_samples=len(nega), random_state=1)
-        #
-        # train_data = np.append(posi, nega, axis=0)
-        # labels_posi = [1 for i in range(len(posi))]
-        # labels_nega = [0 for i in range(len(nega))]
-        # train_labels = np.append(labels_posi, labels_nega)
 
         train_data, train_labels = balance_data(train_data, train_labels)
 
@@ -123,7 +79,7 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
         print(train_labels.shape)
 
         # create model
-        model = models(maxlen)
+        model = models()
         print(model.summary())
 
         # create weight
@@ -140,7 +96,7 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
                                       patience=5, verbose=1, mode='auto', min_delta=0.0001, cooldown=5,
                                       min_lr=0.00001)
         callbacks = [
-            # reduce_lr,
+            reduce_lr,
             es
         ]
 
@@ -151,7 +107,7 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
             batch_size=batch_size,
             epochs=epochs,
             validation_data=(val_data, val_labels),
-            class_weight=weight,
+            # class_weight=weight,
             callbacks=callbacks,
             shuffle=True,
             verbose=2
@@ -163,19 +119,20 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
 
 
 if __name__ == '__main__':
-    path_pssm = 'data/csv/'
+    path = '../data/training.fasta'
     n_splits = 10
     # random_state = random.randint(0, 19999)
     random_state = 3518
     BATCH_SIZE = 16
     EPOCHS = 200
     print(random_state)
-    save_path_model = "saved_models/" + str(random_state) + "/"
-    save_path_his = "saved_histories/" + str(random_state) + "/"
+    save_path_model = "saved_models/" + str(random_state) + " AAC dnn/"
+    save_path_his = "saved_histories/" + str(random_state) + " AAC dnn/"
     if not os.path.isdir(save_path_model):
         os.mkdir(save_path_model)
     if not os.path.isdir(save_path_his):
         os.mkdir(save_path_his)
-    train(n_splits, path_pssm, BATCH_SIZE, EPOCHS, random_state, maxlen=400,
+
+    train(n_splits, path, BATCH_SIZE, EPOCHS, random_state, maxlen=400,
           save_path_model=save_path_model, save_path_his=save_path_his)
 
