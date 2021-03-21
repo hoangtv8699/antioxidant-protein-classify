@@ -18,6 +18,7 @@ from tensorflow.keras.preprocessing import sequence
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 import time
+from sklearn import metrics
 
 
 def normalize_data(datas):
@@ -39,7 +40,7 @@ def normalize(data):
         sample_mean = sum(row) / (len(row) + K.epsilon())
         standard_deviation = math.sqrt(sum([pow(x - sample_mean, 2) for x in row]) / (len(row) + K.epsilon()))
         data[j] = [(x - sample_mean) / (standard_deviation + K.epsilon()) for x in row]
-    return data
+    return np.asarray(data)
 
 
 def normalize_common(data):
@@ -121,10 +122,10 @@ def read_data(path, padding="pad_sequence", maxlen=400):
     with np.printoptions(threshold=np.inf):
         for pssm_file in pssm_files:
             df = pd.read_csv(path + pssm_file, sep=',', header=None)
-            df = np.asarray(df)
+            df = np.asarray(df, dtype=np.float32)
             df = normalize(df.T)
             if padding == "pad_sequence":
-                df = sequence.pad_sequences(df, maxlen=maxlen, padding='post', truncating='post')
+                df = sequence.pad_sequences(df, maxlen=maxlen, padding='post', truncating='post', dtype='float32', value=0.0)
             elif padding == "same":
                 df = pad_same(df, maxlen=maxlen)
             label = int(pssm_file.split('_')[1])
@@ -438,9 +439,9 @@ def acc(y_true, y_pred):
 
 
 def auc(y_true, y_pred):
-    y_pred_bin = tf.math.argmax(y_pred, axis=-1)
+    y_pred = np.asarray(y_pred)
     m = tf.keras.metrics.AUC()
-    m.update_state(y_true, tf.reshape(y_pred_bin, y_true.shape))
+    m.update_state(y_true, y_pred[:, 1])
     return m.result()
 
 

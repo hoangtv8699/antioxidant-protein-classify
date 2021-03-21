@@ -130,8 +130,8 @@ def train(n_splits, path, batch_size, epochs, random_state):
 
 
 if __name__ == '__main__':
-    path = 'data/training.fasta'
-    test_path = 'data/independent_2.csv'
+    path = '../data/training.fasta'
+    test_path = '../data/independent_2.csv'
     n_splits = 5
     random_state = 5312
     BATCH_SIZE = 16

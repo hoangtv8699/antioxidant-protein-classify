@@ -46,12 +46,14 @@ data_bert_val_1 = data_bert_val_1[:, 0]
 # data_bert, labels_bert = balance_data(data_bert, labels_bert)
 
 # SMOTE
-sm = SMOTE(random_state=1)
-data_bert, labels_bert = sm.fit_resample(data_bert, labels_bert)
+# sm = SMOTE(random_state=1)
+# data_bert, labels_bert = sm.fit_resample(data_bert, labels_bert)
+#
+# clf = ensemble.RandomForestClassifier(random_state=1010)
+# clf.fit(data_bert, labels_bert)
+# dump(clf, 'saved_models/RF_top1_SMOTE_1010.joblib')
 
-clf = ensemble.RandomForestClassifier(random_state=1010)
-clf.fit(data_bert, labels_bert)
-dump(clf, 'saved_models/RF_top1_SMOTE_1010.joblib')
+clf = load('saved_models/RFtop1.joblib')
 
 print('independent test 2:')
 pre = clf.predict_proba(data_bert_val)

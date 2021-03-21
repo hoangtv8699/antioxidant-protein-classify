@@ -5,12 +5,15 @@ from sklearn.model_selection import StratifiedKFold
 from tensorflow import keras
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import MaxPooling1D
 from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import Embedding
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.models import Sequential
@@ -23,35 +26,18 @@ from sklearn.utils import resample
 from imblearn.over_sampling import SMOTE
 
 
-def models(maxlen=400):
+def models():
     model = Sequential([
-        Input(shape=(20, maxlen, 1)),
+        Input(shape=(40, 400)),
 
-        ZeroPadding2D(1),
-        Conv2D(32, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
+        Conv1D(64, 7, activation='relu'),
+        MaxPooling1D(2, 2),
         Dropout(0.2),
 
-        ZeroPadding2D(1),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
+        LSTM(256, return_sequences=True),
         Dropout(0.2),
-
-        ZeroPadding2D(1),
-        Conv2D(128, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
+        LSTM(256),
         Dropout(0.2),
-
-        ZeroPadding2D(1),
-        Conv2D(256, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Dropout(0.2),
-
-        Flatten(),
-        # Reshape((-1, 1)),
-        #
-        # LSTM(56),
-        # Dropout(0.2),
 
         Dense(256, activation='relu'),
         Dropout(0.2),
@@ -74,14 +60,26 @@ def models(maxlen=400):
 def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
           save_path_model="saved_models/", save_path_his="saved_histories/"):
     # read data
-    data_pssm, labels = read_data(path_pssm, padding="pad_sequence", maxlen=maxlen)
+    with open('../data/train_data_pssm.npy', 'rb') as f:
+        data_pssm = np.load(f, allow_pickle=True)
+    with open('../data/train_labels_pssm.npy', 'rb') as f:
+        labels = np.load(f, allow_pickle=True)
 
-    # with open('data/train_data_pssm.npy', 'rb') as f:
-    #     data_pssm = np.load(f, allow_pickle=True)
-    # with open('data/train_labels_pssm.npy', 'rb') as f:
-    #     labels = np.load(f, allow_pickle=True)
+    with open('../data/train_data_bert.npy', 'rb') as f:
+        data_bert = np.load(f, allow_pickle=True)
+    with open('../data/train_labels_bert.npy', 'rb') as f:
+        labels_bert = np.load(f, allow_pickle=True)
 
-    data = data_pssm
+    missing = check_missing(path_pssm)
+    data_bert = np.delete(data_bert, missing, axis=0)
+
+    data_bert = data_bert[:, :20, :]
+
+    data = np.append(data_pssm, data_bert, axis=1)
+
+    # data = data_bert
+
+    print(data.shape)
 
     # create 10-fold cross validation
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -111,8 +109,11 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
 
         train_data, train_labels = balance_data(train_data, train_labels)
 
-        train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
-        val_data = np.expand_dims(val_data, axis=-1).astype(np.float32)
+        # train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
+        # val_data = np.expand_dims(val_data, axis=-1).astype(np.float32)
+
+        train_data = train_data.astype(np.float32)
+        val_data = val_data.astype(np.float32)
 
         train_posi = sum(train_labels)
         train_nega = len(train_labels) - train_posi
@@ -124,11 +125,12 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
         print("number of val positive: {}".format(val_posi))
         print("number of val negative: {}".format(val_nega))
 
+        print(train_data.shape)
         print(train_labels.shape)
 
         # create model
-        model = models(maxlen)
-        print(model.summary())
+        model = models()
+        # print(model.summary())
 
         # create weight
         weight = {0: 1, 1: 6}
@@ -167,15 +169,15 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
 
 
 if __name__ == '__main__':
-    path_pssm = 'data/csv/'
+    path_pssm = '../data/csv/'
     n_splits = 10
     # random_state = random.randint(0, 19999)
-    random_state = 193
+    random_state = 100
     BATCH_SIZE = 16
     EPOCHS = 200
     print(random_state)
-    save_path_model = "saved_models/" + str(random_state) + "/"
-    save_path_his = "saved_histories/" + str(random_state) + "/"
+    save_path_model = "saved_models/" + str(random_state) + " LSTM CNN only pssm 20 bert/"
+    save_path_his = "saved_histories/" + str(random_state) + " LSTM CNN only pssm 20 bert/"
     if not os.path.isdir(save_path_model):
         os.mkdir(save_path_model)
     if not os.path.isdir(save_path_his):

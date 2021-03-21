@@ -10,11 +10,24 @@ from utils.helpers import *
 from utils.adasopt import *
 
 if __name__ == '__main__':
-    test_path = 'data/test/independent_2/'
+    test_path = '../data/test/independent_2/'
     data, labels = read_data(test_path)
+
+    with open('../data/independent_2_data_bert.npy', 'rb') as f:
+        data_bert = np.load(f, allow_pickle=True)
+    with open('../data/independent_2_labels_bert.npy', 'rb') as f:
+        labels_bert = np.load(f, allow_pickle=True)
+
+    data_bert = data_bert[:, :20, :]
+
+    data = np.append(data, data_bert, axis=1)
+
+    # data = data_bert
+
     print(data.shape)
-    data = np.expand_dims(data, axis=-1).astype(np.float32)
-    path = "saved_models/193/"
+    data = data.astype(np.float32)
+    # data = np.expand_dims(data, axis=-1).astype(np.float32)
+    path = "saved_models/100 LSTM CNN only pssm 20 bert/"
     model_paths = os.listdir(path)
     model = []
     for model_path in model_paths:
@@ -91,4 +104,4 @@ if __name__ == '__main__':
     a.append(b)
     b = []
 
-    pd.DataFrame(a).to_csv('test.csv')
+    pd.DataFrame(a).to_csv('../test.csv')
