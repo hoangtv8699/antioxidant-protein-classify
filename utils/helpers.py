@@ -65,7 +65,7 @@ def normalize_common(data):
 #     return data
 
 
-def balance_data(data, labels):
+def balance_data(data, labels, sead=7):
     posi = []
     nega = []
     balanced_data = []

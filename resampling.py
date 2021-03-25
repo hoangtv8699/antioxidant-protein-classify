@@ -9,6 +9,7 @@ from utils.helpers import *
 from utils.iFeature_helper import *
 from sklearn.utils import resample
 from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import GridSearchCV
 
 with open('data/train_data_bert.npy', 'rb') as f:
     data_bert = np.load(f, allow_pickle=True)
@@ -25,17 +26,17 @@ with open('data/independent_1_data_bert.npy', 'rb') as f:
 with open('data/independent_1_labels_bert.npy', 'rb') as f:
     labels_bert_val_1 = np.load(f, allow_pickle=True)
 
-data_bert = data_bert[:, 0]
+# data_bert = data_bert[:, 0]
 data_bert_val = data_bert_val[:, 0]
 data_bert_val_1 = data_bert_val_1[:, 0]
-
+#
 # # resampling
 # posi = data_bert[labels_bert == 1]
 # nega = data_bert[labels_bert == 0]
 # # up resample
-# # posi = resample(posi, replace=True, n_samples=int(len(nega)), random_state=1010)
+# posi = resample(posi, replace=True, n_samples=int(len(nega)), random_state=7)
 # # down resample
-# nega = resample(nega, replace=True, n_samples=int(len(posi)), random_state=1010)
+# # nega = resample(nega, replace=True, n_samples=int(len(posi)), random_state=1010)
 # # concat data
 # print(len(posi))
 # print(len(nega))
@@ -48,12 +49,41 @@ data_bert_val_1 = data_bert_val_1[:, 0]
 # SMOTE
 # sm = SMOTE(random_state=1)
 # data_bert, labels_bert = sm.fit_resample(data_bert, labels_bert)
-#
-# clf = ensemble.RandomForestClassifier(random_state=1010)
-# clf.fit(data_bert, labels_bert)
-# dump(clf, 'saved_models/RF_top1_SMOTE_1010.joblib')
 
-clf = load('saved_models/RFtop1.joblib')
+with open('data/train_RF.npy', 'rb') as f:
+    data_bert = np.load(f, allow_pickle=True)
+with open('data/labels_RF.npy', 'rb') as f:
+    labels_bert = np.load(f, allow_pickle=True)
+
+param_grid = {
+    'bootstrap': [True],
+    'max_depth': [80, 100, 110],
+    'max_features': [2, 3],
+    'min_samples_leaf': [1, 3, 5],
+    'min_samples_split': [2, 6, 10],
+    'n_estimators': [100, 200, 300]
+}
+# Create a based model
+rf = ensemble.RandomForestClassifier(random_state=7)
+# Instantiate the grid search model
+grid_search = GridSearchCV(estimator=rf, param_grid=param_grid,
+                           cv=10, n_jobs=-1, verbose=2)
+grid_search.fit(data_bert, labels_bert)
+
+# clf = ensemble.RandomForestClassifier(random_state=7)
+# clf.fit(data_bert, labels_bert)
+# print(clf.get_params())
+# print(clf.)
+# dump(clf, 'saved_models/RF_top1_SMOTE_7.joblib')
+
+# with open('data/train_RF.npy', 'wb') as f:
+#     np.save(f, data_bert)
+# with open('data/labels_RF.npy', 'wb') as f:
+#     np.save(f, labels_bert)
+
+# clf = load('saved_models/RFtop1.joblib')
+
+clf = grid_search.best_estimator_
 
 print('independent test 2:')
 pre = clf.predict_proba(data_bert_val)
