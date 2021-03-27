@@ -21,11 +21,11 @@ with open('data/independent_1_labels_bert.npy', 'rb') as f:
 data_bert_val = data_bert_val[:, 0]
 data_bert_val_1 = data_bert_val_1[:, 0]
 
-clf1 = load('saved_models/RF_top1_1.joblib')
-pre = clf1.predict_proba(data_bert_val)
+clf = load('saved_models/RF_up_resample_7.joblib')
+pre = clf.predict_proba(data_bert_val)
 pre = np.asarray(pre)
 
-pre_1 = clf1.predict_proba(data_bert_val_1)
+pre_1 = clf.predict_proba(data_bert_val_1)
 pre_1 = np.asarray(pre_1)
 
 test_path = 'data/test/independent_2/'
@@ -36,7 +36,7 @@ data_1, labels_1 = read_data(test_path_1)
 data = np.expand_dims(data, axis=-1).astype(np.float32)
 data_1 = np.expand_dims(data_1, axis=-1).astype(np.float32)
 
-path = "saved_models/103/"
+path = "saved_models/13/"
 model_paths = os.listdir(path)
 model = []
 for model_path in model_paths:
@@ -54,14 +54,24 @@ for i in range(len(pre)):
 
 ave = np.asarray(ave)
 
-print('SEN:' + str(sensitivity(labels, ave).numpy()))
-print('SPE:' + str(specificity(labels, ave).numpy()))
-print('ACC:' + str(acc(labels, ave).numpy()))
-print('MCC:' + str(mcc(labels, ave).numpy()))
-print('AUC:' + str(auc(labels, ave).numpy()))
+sen = sensitivity(labels, ave).numpy()
+spe = specificity(labels, ave).numpy()
+accc = acc(labels, ave).numpy()
+mccc = mcc(labels, ave).numpy()
+aucc = auc(labels, ave).numpy()
+print('SEN:' + str(sen))
+print('SPE:' + str(spe))
+print('ACC:' + str(accc))
+print('MCC:' + str(mccc))
+print('AUC:' + str(aucc))
 ave_1 = []
 for i in range(len(pre_1)):
     tmp = [pre_1[i][0] + vote_1[i][0], pre_1[i][1] + vote_1[i][1]]
     ave_1.append(tmp)
 
-print('ACC:' + str(acc(labels_1, ave_1).numpy()))
+accc2 = acc(labels_1, ave_1).numpy()
+print('ACC:' + str(accc2))
+
+b = [math.floor(sen * 10000) / 10000, math.floor(spe * 10000) / 10000, math.floor(accc * 10000) / 10000,
+     math.floor(mccc * 10000) / 10000, math.floor(aucc * 10000) / 10000, math.floor(accc2 * 10000) / 10000]
+pd.DataFrame([b]).to_csv('test.csv')

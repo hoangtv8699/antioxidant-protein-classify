@@ -65,7 +65,7 @@ def normalize_common(data):
 #     return data
 
 
-def balance_data(data, labels, sead=7):
+def balance_data(data, labels, random_state):
     posi = []
     nega = []
     balanced_data = []
@@ -77,7 +77,7 @@ def balance_data(data, labels, sead=7):
         else:
             nega.append(data[i])
 
-    random.shuffle(posi)
+    random.Random(random_state).shuffle(posi)
     # j = 0
     # for i in range(len(nega)):
     #     if j < len(posi):
