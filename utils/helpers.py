@@ -124,6 +124,7 @@ def read_data(path, padding="pad_sequence", maxlen=400):
             df = pd.read_csv(path + pssm_file, sep=',', header=None)
             df = np.asarray(df, dtype=np.float32)
             df = normalize(df.T)
+            # df = df.T
             if padding == "pad_sequence":
                 df = sequence.pad_sequences(df, maxlen=maxlen, padding='post', truncating='post', dtype='float32', value=0.0)
             elif padding == "same":
@@ -159,7 +160,7 @@ def read_bert(path, padding="pad_sequence", maxlen=400, top=None):
                 df = pad_same(df, maxlen=maxlen)
             label = int(pssm_file.split('_')[1])
             if top is not None:
-                data.append(df.T[top])
+                data.append(df.T[:100])
             else:
                 data.append(df.T)
             labels.append(label)

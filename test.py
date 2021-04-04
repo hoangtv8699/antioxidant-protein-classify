@@ -11,10 +11,10 @@ from utils.adasopt import *
 
 if __name__ == '__main__':
     test_path = 'data/test/independent_2/'
-    data, labels = read_data(test_path)
+    data, labels = read_data(test_path, maxlen=400)
     print(data.shape)
     data = np.expand_dims(data, axis=-1).astype(np.float32)
-    path = "saved_models/193/"
+    path = "saved_models/13/"
     model_paths = os.listdir(path)
     model = []
     for model_path in model_paths:

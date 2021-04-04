@@ -109,7 +109,7 @@ def train(n_splits, path_pssm, batch_size, epochs, random_state, maxlen=400,
         # sm = SMOTE(random_state=random_state)
         # train_data, train_labels = sm.fit_resample(train_data, train_labels)
 
-        train_data, train_labels = balance_data(train_data, train_labels)
+        train_data, train_labels = balance_data(train_data, train_labels, random_state=random_state)
 
         train_data = np.expand_dims(train_data, axis=-1).astype(np.float32)
         val_data = np.expand_dims(val_data, axis=-1).astype(np.float32)
@@ -170,12 +170,12 @@ if __name__ == '__main__':
     path_pssm = 'data/csv/'
     n_splits = 10
     # random_state = random.randint(0, 19999)
-    random_state = 193
+    random_state = 13
     BATCH_SIZE = 16
     EPOCHS = 200
     print(random_state)
-    save_path_model = "saved_models/" + str(random_state) + "/"
-    save_path_his = "saved_histories/" + str(random_state) + "/"
+    save_path_model = "saved_models/" + str(random_state) + " no norm/"
+    save_path_his = "saved_histories/" + str(random_state) + " no norm/"
     if not os.path.isdir(save_path_model):
         os.mkdir(save_path_model)
     if not os.path.isdir(save_path_his):

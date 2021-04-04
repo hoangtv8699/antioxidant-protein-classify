@@ -16,8 +16,8 @@ from utils.iFeature_helper import *
 #
 # print(X.shape)
 # print(y.shape)
-#
-clf = tree.DecisionTreeClassifier()
+# #
+# clf = tree.DecisionTreeClassifier()
 # clf.fit(X, y)
 # dump(clf, 'saved_models/DCT.joblib')
 
@@ -25,7 +25,7 @@ clf = tree.DecisionTreeClassifier()
 clf = load('saved_models/DCT.joblib')
 importance = clf.feature_importances_
 top100 = np.argsort(importance)[::-1][:100]
-# print(top100)
+print(top100)
 # print(importance[top100])
 # # summarize feature importance
 # for i, v in enumerate(importance):
@@ -52,10 +52,10 @@ top100 = np.argsort(importance)[::-1][:100]
 #     np.save(f, labels)
 
 # get top 100 data bert
-x, y = read_bert('data/bert_test/independent_1/', padding="pad_sequence", top=top100)
+x, y = read_bert('data/bert_test/independent_1/', padding="pad_sequence", top=top100, maxlen=400)
 
-with open('data/independent_1_data_bert.npy', 'wb') as f:
+with open('data/independent_1_data_bert_first.npy', 'wb') as f:
     np.save(f, x)
-with open('data/independent_1_labels_bert.npy', 'wb') as f:
+with open('data/independent_1_labels_bert_first.npy', 'wb') as f:
     np.save(f, y)
 

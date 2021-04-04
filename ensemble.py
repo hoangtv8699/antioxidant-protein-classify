@@ -8,20 +8,20 @@ from joblib import dump, load
 from utils.helpers import *
 from utils.iFeature_helper import *
 
-with open('data/independent_2_data_bert.npy', 'rb') as f:
+with open('data/independent_2_data_bert_300.npy', 'rb') as f:
     data_bert_val = np.load(f, allow_pickle=True)
-with open('data/independent_2_labels_bert.npy', 'rb') as f:
+with open('data/independent_2_labels_bert_300.npy', 'rb') as f:
     labels_bert_val = np.load(f, allow_pickle=True)
 
-with open('data/independent_1_data_bert.npy', 'rb') as f:
+with open('data/independent_1_data_bert_300.npy', 'rb') as f:
     data_bert_val_1 = np.load(f, allow_pickle=True)
-with open('data/independent_1_labels_bert.npy', 'rb') as f:
+with open('data/independent_1_labels_bert_300.npy', 'rb') as f:
     labels_bert_val_1 = np.load(f, allow_pickle=True)
 
 data_bert_val = data_bert_val[:, 0]
 data_bert_val_1 = data_bert_val_1[:, 0]
 
-clf = load('saved_models/RF_up_resample_7.joblib')
+clf = load('saved_models/RF_up_resample_300.joblib')
 pre = clf.predict_proba(data_bert_val)
 pre = np.asarray(pre)
 

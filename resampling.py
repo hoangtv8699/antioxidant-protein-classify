@@ -30,11 +30,25 @@ with open('data/independent_1_data_bert.npy', 'rb') as f:
 with open('data/independent_1_labels_bert.npy', 'rb') as f:
     labels_bert_val_1 = np.load(f, allow_pickle=True)
 
+# with open('data/train_data_bert_600.npy', 'rb') as f:
+#     data_bert = np.load(f, allow_pickle=True)
+# with open('data/train_labels_bert_600.npy', 'rb') as f:
+#     labels_bert = np.load(f, allow_pickle=True)
+#
+# with open('data/independent_2_data_bert_600.npy', 'rb') as f:
+#     data_bert_val = np.load(f, allow_pickle=True)
+# with open('data/independent_2_labels_bert_600.npy', 'rb') as f:
+#     labels_bert_val = np.load(f, allow_pickle=True)
+#
+# with open('data/independent_1_data_bert_600.npy', 'rb') as f:
+#     data_bert_val_1 = np.load(f, allow_pickle=True)
+# with open('data/independent_1_labels_bert_600.npy', 'rb') as f:
+#     labels_bert_val_1 = np.load(f, allow_pickle=True)
+
 data_bert = data_bert[:, 0]
 data_bert_val = data_bert_val[:, 0]
 data_bert_val_1 = data_bert_val_1[:, 0]
 
-random_state = random.randint(0, 199)
 
 # resampling
 posi = data_bert[labels_bert == 1]
@@ -52,20 +66,19 @@ data_bert = np.append(posi, nega, axis=0)
 labels_bert = np.append(labels_posi, labels_nega)
 data_bert, labels_bert = balance_data(data_bert, labels_bert, 31)
 
-# SMOTE
+# # SMOTE
 # sm = SMOTE(random_state=1)
 # data_bert, labels_bert = sm.fit_resample(data_bert, labels_bert)
 
 clf = ensemble.RandomForestClassifier(random_state=101)
 clf.fit(data_bert, labels_bert)
-dump(clf, 'saved_models/RF_up_resample_7.joblib')
+dump(clf, 'saved_models/RF_up_resample_400.joblib')
 
-# clf = load('saved_models/RF_up_resample_7.joblib')
+clf = load('saved_models/RF_up_resample_400.joblib')
 
 pre = clf.predict_proba(data_bert_val)
 pre = np.asarray(pre)
 
-print(random_state)
 print('independent test 2:')
 
 sen = sensitivity(labels_bert_val, pre).numpy()
