@@ -72,9 +72,9 @@ data_bert, labels_bert = balance_data(data_bert, labels_bert, 31)
 
 clf = ensemble.RandomForestClassifier(random_state=101)
 clf.fit(data_bert, labels_bert)
-dump(clf, 'saved_models/RF_up_resample_400.joblib')
+dump(clf, 'saved_models/RF_up_resample.joblib')
 
-clf = load('saved_models/RF_up_resample_400.joblib')
+clf = load('saved_models/RF_up_resample.joblib')
 
 pre = clf.predict_proba(data_bert_val)
 pre = np.asarray(pre)

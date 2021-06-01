@@ -349,13 +349,18 @@ def get_model_name(k):
 
 
 def plot_loss(history, i):
+    f = plt.figure()
+    plt.rc('xtick',labelsize=24)
+    plt.rc('ytick',labelsize=24)
     plt.plot(history['loss'])
     plt.plot(history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig('saved_plots/loss_{}.png'.format(i))
+    plt.ylabel('loss', fontsize=24)
+    plt.xlabel('epochs', fontsize=24)
+    plt.legend(['train loss', 'val loss'], loc='upper right',  prop={'size': 20})
+    plt.show()
+    # plt.savefig('saved_plots/loss_{}.png'.format(i))
+    f.savefig('hinh 4.png')
+    # f.savefig('hinh 4.pdf', dpi=700)
     plt.clf()
 
 
@@ -364,7 +369,7 @@ def plot_accuracy(history, i):
     plt.plot(history['val_accuracy'])
     plt.title('model accuracy')
     plt.ylabel('accuracy')
-    plt.xlabel('epoch')
+    plt.xlabel('epochs')
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig('saved_plots/accuracy_{}.png'.format(i))
     plt.clf()
@@ -375,8 +380,8 @@ def plot_sensitivity(history, i):
     plt.plot(history['val_sensitivity'])
     plt.title('model sensitivity')
     plt.ylabel('sensitivity')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
+    plt.xlabel('epochs')
+    plt.legend(['train loss', 'val loss'], loc='upper left')
     plt.savefig('saved_plots/sensitivity_{}.png'.format(i))
     plt.clf()
 
@@ -386,7 +391,7 @@ def plot_specificity(history, i):
     plt.plot(history['val_specificity'])
     plt.title('model specificity')
     plt.ylabel('specificity')
-    plt.xlabel('epoch')
+    plt.xlabel('epochs')
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig('saved_plots/specificity_{}.png'.format(i))
     plt.clf()
